@@ -1,17 +1,18 @@
 import json
 from argparse import ArgumentParser, Namespace
-from collections import KeysView  # had to import this
 from datetime import datetime
-from json import load
 from os.path import exists
-from typing import Any  # had to import this
+from typing import Any
+
 import matplotlib.pyplot as plt
-import numpy as np
 from dateutil.parser import parse
 from intervaltree import IntervalTree
 from matplotlib.figure import Figure
 from progress.spinner import MoonSpinner
+import math
 
+# imports are above
+# arguments are below
 
 def getArgparse() -> Namespace:
     parser: ArgumentParser = ArgumentParser(
@@ -39,7 +40,8 @@ def getArgparse() -> Namespace:
         "--closed-issues-graph-filename",
         help="The filename of the output graph of closed issues",
         type=str,
-        required=True,
+        required=False,
+        default="closed.pdf",
     )
     parser.add_argument(
         "-i",
@@ -53,24 +55,46 @@ def getArgparse() -> Namespace:
         "--line-of-issues-spoilage-filename",
         help="The filename of the output graph of spoiled issues",
         type=str,
-        required=True,
+        required=False,
+        default="spoilage.pdf",
     )
     parser.add_argument(
         "-o",
         "--open-issues-graph-filename",
         help="The filename of the output graph of open issues",
         type=str,
-        required=True,
+        required=False,
+        default="open.pdf",
     )
     parser.add_argument(
         "-x",
         "--joint-graph-filename",
         help="The filename of the joint output graph of open and closed issues",
         type=str,
-        required=True,
+        required=False,
+        default="joint.pdf",
+    )
+    parser.add_argument(
+        "-s",
+        "--stepper",
+        help="The frequency of days with which you want to see the number of issues for",
+        type=int,
+        required=False,
+        default=None,
+    )
+    parser.add_argument(
+        "-e",
+        "--export",
+        help="The filename of the json file with issue spoilage data against time",
+        type=str,
+        required=False,
+        default=None,
     )
 
+
     return parser.parse_args()
+
+#function below makes the data a more readable format for the functions following it
 
 def issue_processor(filename: str) -> list:
 
@@ -108,95 +132,96 @@ def issue_processor(filename: str) -> list:
         else:
             value["closed_at"] = issues["closed_at"][str(i)]
 
-        createdAtDay: datetime = parse(issues["created_at"][str(i)]).replace(tzinfo=None)
+        createdAtDay: datetime = parse(issues["created_at"][str(i)]).replace(
+            tzinfo=None
+        )
 
         value["created_at_day"] = (createdAtDay - day0).days
 
         if value["state"] == "open":
             value["closed_at_day"] = (dayN - day0).days
         else:
-            value["closed_at_day"] = (parse(issues["closed_at"][str(i)]).replace(tzinfo=None) - day0).days
+            value["closed_at_day"] = (
+                parse(issues["closed_at"][str(i)]).replace(tzinfo=None) - day0
+            ).days
 
         data.append(value)
 
     return data
 
-# def loadJSON(filename: str) -> list:
-#     try:
-#         with open(file=filename, mode="r") as jsonFile:
-#             return load(jsonFile)
-#     except FileExistsError:
-#         print(f"{filename} does not exist.")
-#         quit(1)
 
+# converting the data into an interval tree
 
 def createIntervalTree(data: list, filename: str) -> IntervalTree:
     tree: IntervalTree = IntervalTree()
     # day0: datetime = parse(data[0]["created_at"]).replace(tzinfo=None)
-
+    args: Namespace = getArgparse()
+    factor: int
+    if args.stepper == None or args.stepper <= 0:
+        factor = 1
+    else:
+        factor = args.stepper
     with MoonSpinner(f"Creating interval tree from {filename}... ") as pb:
-        issue: dict
-        for issue in data:
-            begin: int = issue["created_at_day"]
-            end: int = issue["closed_at_day"]
+        for i in range(int(len(data)/factor)):
+            begin: int = data[i*factor]["created_at_day"]
+            end: int = data[i*factor]["closed_at_day"]
 
             try:
-                issue["endDayOffset"] = 0
-                tree.addi(begin=begin, end=end, data=issue)
+                data[i*factor]["endDayOffset"] = 0
+                tree.addi(begin=begin, end=end, data=data[i*factor])
             except ValueError:
-                issue["endDayOffset"] = 1
-                tree.addi(begin=begin, end=end + 1, data=issue)
+                data[i*factor]["endDayOffset"] = 1
+                tree.addi(begin=begin, end=end + 1, data=data[i*factor])
 
             pb.next()
 
     return tree
 
 
+# converting an interval tree into a dictionary of overlapping spoiled issues
+
 def issue_spoilage_data(
     data: IntervalTree,
 ):
+    args: Namespace = getArgparse()
+    factor: int
+    if args.stepper == None or args.stepper <= 0:
+        factor = 1
+    else:
+        factor = args.stepper
     # startDay: int = data.begin()
     endDay: int = data.end()
-    list_of_spoilage_values = []
-    list_of_intervals = []
-    for i in range(endDay):
-        if i == 1:
-            temp_set = data.overlap(0, 1)
+    dict_of_spoilage_values = dict()
+    for i in range(int(endDay/factor)+1):
+        if i*factor == 1*factor:
+            temp_set = data.overlap(0, 1*factor)
             proc_overlap = []
             for issue in temp_set:
                 # if issue.data["state"] == "open":
                 #     proc_overlap.append(issue)
-                if issue.begin != issue.end - 1 and issue.data["endDayOffset"] != 1:
+                if issue.begin != issue.end - 1*factor and issue.data["endDayOffset"] != 1:
                     proc_overlap.append(issue)
                     # list_of_intervals.append(issue.end - startDay)
-            list_of_spoilage_values.append(
-                {
-                    "day": i + 1,
-                    "number_open": len(proc_overlap),
-                    "intervals": list_of_intervals,
-                }
-            )
+            dict_of_spoilage_values[i*factor] = len(proc_overlap)
+        elif i*factor == 0:
+            pass
         else:
-            temp_set = data.overlap(i - 1, i) # can change the step size by making the -1 a variable and chaning the top if statement overlap to 0, step size
+            temp_set = data.overlap(
+                i*factor-1*factor, i*factor
+            )  # can change the step size by making the -1 a variable and chaning the top if statement overlap to 0, step size
             proc_overlap = []
             for issue in temp_set:
                 # if issue.data["state"] == "open":
                 #     proc_overlap.append(issue)
-                if issue.begin != issue.end - 1 and issue.data["endDayOffset"] != 1:
+                if issue.begin != issue.end - 1*factor and issue.data["endDayOffset"] != 1:
                     proc_overlap.append(issue)
                     # list_of_intervals.append(issue.end - startDay)
-            list_of_spoilage_values.append(
-                {
-                    "day": i + 1,
-                    "number_open": len(proc_overlap),
-                    "intervals": list_of_intervals,
-                }
-            )
-    return list_of_spoilage_values
+            dict_of_spoilage_values[i*factor] = len(proc_overlap)
+    return dict_of_spoilage_values
 
-def shrink_graph(
-  keys=None
-):
+# extra graph functionality functions
+
+def shrink_graph(keys=None):
     args: Namespace = getArgparse()
     if args.upper_window_bound != None:
         if args.lower_window_bound != None:
@@ -207,9 +232,23 @@ def shrink_graph(
         if args.lower_window_bound != None:
             plt.xlim(args.lower_window_bound, len(keys))
 
+def stepper(data: dict = None):
+    args: Namespace = getArgparse()
+    newData: dict = dict()
+    if args.stepper == None:
+        return data
+    elif args.stepper <= 0:
+        return data
+    else:
+        for i in range(int(len(data)/args.stepper) + 1):
+            newData[i*args.stepper] = data[i*args.stepper]
+        return newData
+
+# graphs
+
 def plot_IssueSpoilagePerDay(
-    pregeneratedData: list,
-    filename: str,
+    pregeneratedData: dict,
+    filename: str = None,
 ):
     figure: Figure = plt.figure()
 
@@ -217,13 +256,9 @@ def plot_IssueSpoilagePerDay(
     plt.ylabel("Number of Issues")
     plt.xlabel("Day")
 
-    data: list = pregeneratedData
-
-    keys = list()
-    values = list()
-    for day in pregeneratedData:
-        keys.append(day["day"])
-        values.append(day["number_open"])
+    data: dict = pregeneratedData
+    keys = data.keys()
+    values = data.values()
 
     plt.plot(keys, values)
 
@@ -236,7 +271,7 @@ def plot_IssueSpoilagePerDay(
 
 def plot_OpenIssuesPerDay_Line(
     pregeneratedData: dict = None,
-    filename: str = "open_issues_per_day_line.png",
+    filename: str = None,
 ):
     figure: Figure = plt.figure()
 
@@ -245,7 +280,6 @@ def plot_OpenIssuesPerDay_Line(
     plt.xlabel("Day")
 
     data: dict = pregeneratedData
-
     plt.plot(data.keys(), data.values())
     shrink_graph(keys=data.keys())
     figure.savefig(filename)
@@ -255,7 +289,7 @@ def plot_OpenIssuesPerDay_Line(
 
 def plot_ClosedIssuesPerDay_Line(
     pregeneratedData: dict = None,
-    filename: str = "closed_issues_per_day_line.png",
+    filename: str = None,
 ):
     figure: Figure = plt.figure()
 
@@ -264,7 +298,6 @@ def plot_ClosedIssuesPerDay_Line(
     plt.xlabel("Day")
 
     data: dict = pregeneratedData
-
     x_values = [int(i) for i in data.keys()]
     y_values = [int(i) for i in data.values()]
     # z = derivative(x_values, y_values)
@@ -283,8 +316,9 @@ def plot_OpenClosedSpoiledIssuesPerDay_Line(
     pregeneratedData_OpenIssues: dict = None,
     pregeneratedData_ClosedIssues: dict = None,
     pregeneratedData_SpoiledIssues: list = None,
-    filename: str = "open_closed_issues_per_day_line.png",
-):
+    filename: str = None,
+    ):
+
     figure: Figure = plt.figure()
 
     plt.title("Number of Issues Per Day")
@@ -293,13 +327,10 @@ def plot_OpenClosedSpoiledIssuesPerDay_Line(
 
     openData: dict = pregeneratedData_OpenIssues
     closedData: dict = pregeneratedData_ClosedIssues
-    spoiledData: list = pregeneratedData_SpoiledIssues
+    spoiledData: dict = pregeneratedData_SpoiledIssues
 
-    keys = list()
-    values = list()
-    for day in spoiledData:
-        keys.append(day["day"])
-        values.append(day["number_open"])
+    keys = spoiledData.keys()
+    values = spoiledData.values()
 
     plt.plot(openData.keys(), openData.values(), color="blue", label="Open Issues")
     plt.plot(closedData.keys(), closedData.values(), color="red", label="Closed Issues")
@@ -312,12 +343,25 @@ def plot_OpenClosedSpoiledIssuesPerDay_Line(
 
     return exists(filename)
 
+# exports a json file only for issue spoilage data
+
+def return_json(dictionary: dict):
+    the_file = None
+    args: Namespace = getArgparse()
+    if args.export != None:
+        with open(args.export, 'w') as new_file:
+            the_file = json.dump(dictionary, new_file)
+        return the_file
+    else:
+        pass
+
+# creates a dictionary of the values
 
 def fillDictBasedOnKeyValue(
     dictionary: dict, tree: IntervalTree, key: str, value: Any
 ) -> dict:
     data: dict = {}
-    keys: KeysView = dictionary.keys()
+    keys = dictionary.keys()
 
     maxKeyValue: int = max(keys)
     minKeyValue: int = min(keys)
@@ -340,20 +384,8 @@ def fillDictBasedOnKeyValue(
 
     return data
 
-# def derivative(
-#     x_values=None,
-#     y_values=None,
-# ):
-#     x = []
-#     y = []
-#     for i in x_values:
-#         x.append(int(i))
-#     for i in y_values:
-#         y.append(int(i))
-#     x1 = np.array(x)
-#     y1 = np.array(y)
-#     z = np.polyfit(x1, y1, 100)
-#     return z
+# runs entire file depending on user input and preferences
+
 def main() -> None:
     args: Namespace = getArgparse()
 
@@ -381,9 +413,14 @@ def main() -> None:
         dictionary=baseDict, tree=tree, key="state", value="closed"
     )
 
-    new_list: list = issue_spoilage_data(
+    new_list: dict = issue_spoilage_data(
         data=tree,
     )
+
+    return_json(
+            new_list
+    )
+
 
     plot_OpenIssuesPerDay_Line(
         pregeneratedData=openIssues, filename=args.open_issues_graph_filename
