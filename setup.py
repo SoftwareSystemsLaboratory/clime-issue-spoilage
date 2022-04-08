@@ -43,7 +43,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "ssl-metrics-github-issue-spoilage-graph = ssl_metrics_github_issue_spoilage.create_graph:main",
+            "ssl-metrics-github-issue-spoilage-graph = ssl_metrics_github_issue_spoilage.main:main",
         ]
     },
 )
