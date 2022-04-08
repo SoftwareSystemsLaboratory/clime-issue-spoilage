@@ -1,4 +1,5 @@
 from argparse import Namespace
+from typing import final
 
 import matplotlib.pyplot as plt
 import pandas
@@ -43,7 +44,7 @@ def main() -> None:
 
     data: list = []
     data.append(df["days_since_0"].tolist())
-    data.append(df["defect_density"].tolist())
+    data.append(df["issue_spoilage"].tolist())
 
     plot(
         x=data[0],
