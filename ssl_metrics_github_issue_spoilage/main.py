@@ -6,6 +6,7 @@ from pandas import DataFrame
 from dateutil.parser import parse as dateParse
 from intervaltree import IntervalTree
 
+
 def getIssueTimelineIntervals(day0: datetime, issues: DataFrame) -> list:
     intervals = []
 
@@ -15,14 +16,15 @@ def getIssueTimelineIntervals(day0: datetime, issues: DataFrame) -> list:
         startDate: datetime = dateParse(str(foo)).replace(tzinfo=None)
         endDate: datetime = dateParse(str(bar)).replace(tzinfo=None)
 
-        startDaySince0: int  = (startDate - day0).days
+        startDaySince0: int = (startDate - day0).days
         endDaySince0: int = (endDate - day0).days
 
         intervals.append((startDaySince0, endDaySince0))
 
     return intervals
 
-def buildIntervalTree(intervals: list) ->  IntervalTree:
+
+def buildIntervalTree(intervals: list) -> IntervalTree:
     tree: IntervalTree = IntervalTree()
 
     interval: tuple
@@ -31,11 +33,12 @@ def buildIntervalTree(intervals: list) ->  IntervalTree:
 
     return tree
 
+
 def getDailyIssueSpoilage(intervals: IntervalTree, timeline: list) -> list:
     return [len(intervals[day]) for day in timeline]
 
 
-def main()  ->  None:
+def main() -> None:
     args: Namespace = mainArgs()
 
     issues: DataFrame = pandas.read_json(args.input).T
@@ -58,7 +61,6 @@ def main()  ->  None:
     }
 
     DataFrame(data).to_json(args.output)
-
 
 
 if __name__ == "__main__":
