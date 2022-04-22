@@ -10,7 +10,7 @@
     - [Licensing](#licensing)
   - [How To Use](#how-to-use)
     - [Installation](#installation)
-    - [Command Line Arguements](#command-line-arguements)
+    - [Command Line Options](#command-line-options)
 
 ## About
 
@@ -29,25 +29,53 @@ You can install the tool via `pip` with either of the two following one-liners:
 - `pip install --upgrade pip clime-metrics`
 - `pip install --upgrade pip clime-issue-spoilage`
 
-### Command Line Arguements
+### Command Line Options
+
+`clime-issue-spoilage-compute -h`
+
+``` shell
+usage: CLIME Issue Spoilage Calculator [-h] [-i INPUT] [-o OUTPUT] [-v]
+
+A tool to calculate the issue spoilage of a repository
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT, --input INPUT
+                        Issues JSON file. DEFAULT: ./github_issues.json
+  -o OUTPUT, --output OUTPUT
+                        Output JSON file. DEFAULT: ./issue_spoilage.json
+  -v, --version         Display version of the tool
+
+Author(s): Nicholas M. Synovic, Rohan Sethi, Jacob Palmer, George K.
+Thiruvathukal
+```
 
 `clime-issue-spoilage-graph -h`
 
-```shell
+``` shell
+usage: CLIME Issue Spoilage Grapher [-h] [-i INPUT] [-o OUTPUT] [--type TYPE]
+                                    [--title TITLE] [--x-label X_LABEL]
+                                    [--y-label Y_LABEL]
+                                    [--stylesheet STYLESHEET] [-v]
+
+A tool to graph the issue spoilage of a repository
+
 options:
   -h, --help            show this help message and exit
-  -u UPPER_WINDOW_BOUND, --upper-window-bound UPPER_WINDOW_BOUND
-                        Argument to specify the max number of days to look at. NOTE: window bounds are inclusive.
-  -l LOWER_WINDOW_BOUND, --lower-window-bound LOWER_WINDOW_BOUND
-                        Argument to specify the start of the window of time to analyze. NOTE: window bounds are inclusive.
-  -c CLOSED_ISSUES_GRAPH_FILENAME, --closed-issues-graph-filename CLOSED_ISSUES_GRAPH_FILENAME
-                        The filename of the output graph of closed issues
   -i INPUT, --input INPUT
-                        The input JSON file that is to be used for graphing
-  -d LINE_OF_ISSUES_SPOILAGE_FILENAME, --line-of-issues-spoilage-filename LINE_OF_ISSUES_SPOILAGE_FILENAME
-                        The filename of the output graph of spoiled issues
-  -o OPEN_ISSUES_GRAPH_FILENAME, --open-issues-graph-filename OPEN_ISSUES_GRAPH_FILENAME
-                        The filename of the output graph of open issues
-  -x JOINT_GRAPH_FILENAME, --joint-graph-filename JOINT_GRAPH_FILENAME
-                        The filename of the joint output graph of open and closed issues
+                        JSON export from CLIME GitHub Bus Factor Compute.
+                        DEFAULT: ./issue_spoilage.json
+  -o OUTPUT, --output OUTPUT
+                        Filename of the graph. DEFAULT: ./issue_spoilage.pdf
+  --type TYPE           Type of figure to plot. DEFAULT: line
+  --title TITLE         Title of the figure. DEFAULT: ""
+  --x-label X_LABEL     X axis label of the figure. DEFAULT: ""
+  --y-label Y_LABEL     Y axis label of the figure. DEFAULT: ""
+  --stylesheet STYLESHEET
+                        Filepath of matplotlib stylesheet to use. DEFAULT: ""
+  -v, --version         Display version of the tool
+
+Author(s): Nicholas M. Synovic, Rohan Sethi, Jacob Palmer, George K.
+Thiruvathukal
+
 ```
