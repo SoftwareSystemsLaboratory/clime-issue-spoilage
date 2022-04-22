@@ -1,5 +1,8 @@
 # CLIME Issue Spoilage
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6454355.svg)](https://doi.org/10.5281/zenodo.6454355)
+[![Release Project](https://github.com/SoftwareSystemsLaboratory/clime-issue-spoilage/actions/workflows/release.yml/badge.svg)](https://github.com/SoftwareSystemsLaboratory/clime-issue-spoilage/actions/workflows/release.yml)
+
 > A tool to calculate the issue spoilage of a repository using the issues reported in its issue tracker
 
 ## Table of Contents
