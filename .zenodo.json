@@ -1,6 +1,6 @@
 {
     "upload_type": "software",
-    "title": "SoftwareSystemsLaboratory/ssl-metrics-github-issue-spoilage",
+    "title": "SoftwareSystemsLaboratory/clime-issue-spoilage",
     "creators": [
         {
         "name": "Palmer, Jake",
@@ -23,7 +23,7 @@
         "orcid": "0000-0002-0452-5571"
         }
     ],
-    "description": "A python tool to calculate the issue spoilage of a GitHub repository",
+    "description": "A tool to calculate the issue spoilage of a repository using the issues reported in its issue tracker",
     "access_right": "open",
     "license": "BSD-3-Clause",
     "prereserve_doi": true,
