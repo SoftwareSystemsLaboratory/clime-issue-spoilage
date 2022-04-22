@@ -4,7 +4,6 @@ from typing import final
 import matplotlib.pyplot as plt
 import pandas
 from pandas import DataFrame
-
 from ssl_metrics_github_issue_spoilage.args import graphArgs
 
 

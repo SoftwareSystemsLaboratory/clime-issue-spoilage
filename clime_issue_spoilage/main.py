@@ -1,10 +1,13 @@
 from argparse import Namespace
 from datetime import datetime
-from ssl_metrics_github_issue_spoilage.args import mainArgs
+
 import pandas
-from pandas import DataFrame
 from dateutil.parser import parse as dateParse
 from intervaltree import IntervalTree
+from pandas import DataFrame
+
+from clime_issue_spoilage.args import mainArgs
+from clime_issue_spoilage.version import version
 
 
 def getIssueTimelineIntervals(day0: datetime, issues: DataFrame) -> list:
