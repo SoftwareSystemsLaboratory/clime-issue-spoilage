@@ -44,6 +44,10 @@ def getDailyIssueSpoilage(intervals: IntervalTree, timeline: list) -> list:
 def main() -> None:
     args: Namespace = mainArgs()
 
+    if args.version:
+        print(f"clime-issue-spoilage-compute version {version()}")
+        quit(0)
+
     issues: DataFrame = pandas.read_json(args.input).T
 
     day0: datetime = dateParse(issues["created_at"][0]).replace(tzinfo=None)
