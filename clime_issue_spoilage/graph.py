@@ -8,6 +8,7 @@ from pandas import DataFrame
 from clime_issue_spoilage.args import graphArgs
 from clime_issue_spoilage.version import version
 
+
 def plot(
     x: list,
     y: list,
