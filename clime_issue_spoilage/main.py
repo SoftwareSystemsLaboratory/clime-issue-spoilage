@@ -67,7 +67,7 @@ def main() -> None:
         "issue_spoilage": dailyIssuesSpoilage,
     }
 
-    DataFrame(data).to_json(args.output)
+    DataFrame(data).to_json(args.output, indent=4)
 
 
 if __name__ == "__main__":
